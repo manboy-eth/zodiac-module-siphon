@@ -41,13 +41,9 @@ contract Siphon is Module, MultisendEncoder {
     error PaymentFailed();
 
     /// @param _owner Address of the owner
-    /// @param _avatar Address of the avatar (e.g. a Gnosis Safe)
+    /// @param _avatar Address of the avatar (e.g. a Safe)
     /// @param _target Address of the contract that will call exec function
-    constructor(
-        address _owner,
-        address _avatar,
-        address _target
-    ) {
+    constructor(address _owner, address _avatar, address _target) {
         bytes memory initParams = abi.encode(_owner, _avatar, _target);
         setUp(initParams);
     }
@@ -156,7 +152,7 @@ contract Siphon is Module, MultisendEncoder {
         }
     }
 
-    function isConnected(string memory tube) internal view returns (bool) {
+    function isConnected(string memory tube) public view returns (bool) {
         return tubes[tube].dp != address(0) && tubes[tube].lp != address(0);
     }
 }

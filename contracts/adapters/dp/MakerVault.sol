@@ -4,8 +4,8 @@ pragma solidity ^0.8.6;
 import "../../IDebtPosition.sol";
 import "@gnosis.pm/zodiac/contracts/factory/FactoryFriendly.sol";
 
-uint256 constant WAD = 10**18;
-uint256 constant RAY = 10**27;
+uint256 constant WAD = 10 ** 18;
+uint256 constant RAY = 10 ** 27;
 
 interface ICDPManager {
     function ilks(uint256 vault) external view returns (bytes32 ilk);
@@ -16,10 +16,10 @@ interface ICDPManager {
 }
 
 interface IDSProxy {
-    function execute(address _target, bytes memory _data)
-        external
-        payable
-        returns (bytes32 response);
+    function execute(
+        address _target,
+        bytes memory _data
+    ) external payable returns (bytes32 response);
 }
 
 interface IDSSProxyActions {
@@ -36,12 +36,14 @@ interface ISpotter {
 }
 
 interface IVat {
-    function urns(bytes32 ilk, address urnHandler)
-        external
-        view
-        returns (uint256 ink, uint256 art);
+    function urns(
+        bytes32 ilk,
+        address urnHandler
+    ) external view returns (uint256 ink, uint256 art);
 
-    function ilks(bytes32 ilk)
+    function ilks(
+        bytes32 ilk
+    )
         external
         view
         returns (
@@ -153,9 +155,9 @@ contract MakerVaultAdapter is IDebtPosition, FactoryFriendly {
         ratioTrigger = _ratioTrigger;
         vault = _vault;
 
-        ilk = ICDPManager(cdpManager).ilks(vault);
-        urnHandler = ICDPManager(cdpManager).urns(vault);
-        vat = ICDPManager(cdpManager).vat();
+        ilk = ICDPManager(cdpManager).ilks(vault); // here
+        urnHandler = ICDPManager(cdpManager).urns(vault); // here
+        vat = ICDPManager(cdpManager).vat(); // here
         transferOwnership(_owner);
 
         emit AdapterSetup(
@@ -177,6 +179,7 @@ contract MakerVaultAdapter is IDebtPosition, FactoryFriendly {
     // @param _ratio Target collateralization ratio for the vault.
     // @notice Can only be called by owner.
     function setRatioTarget(uint256 _ratio) external override onlyOwner {
+        // @audit - should we do a sanity check on the ratio?
         ratioTarget = _ratio;
         emit SetRatioTarget(ratioTarget);
     }
@@ -185,12 +188,14 @@ contract MakerVaultAdapter is IDebtPosition, FactoryFriendly {
     // @param _ratio The ratio below which debt repayment can be triggered.
     // @notice Can only be called by owner.
     function setRatioTrigger(uint256 _ratio) external override onlyOwner {
+        // @
         ratioTrigger = _ratio;
         emit SetRatioTrigger(ratioTrigger);
     }
 
     // @dev Returns the current collateralization ratio of the vault as ray.
     function ratio() public view override returns (uint256) {
+        // @audit - can we impact the ratio from the outside?
         // Collateralization Ratio = Vat.urn.ink * Vat.ilk.spot * Spot.ilk.mat / (Vat.urn.art * Vat.ilk.rate)
         // or
         // Collateralization Ratio = collateral in vault * spot price * liquidation ratio / (dait debt)
@@ -212,6 +217,7 @@ contract MakerVaultAdapter is IDebtPosition, FactoryFriendly {
     // @dev Returns the amount of Dai that should be repaid to bring vault to target ratio.
     // @return Amount of Dai necessary that should be repaid to bring vault to target ratio.
     function delta() external view override returns (uint256 amount) {
+        // @audit - can we impact the ratio from the outside (with a "flashloan sandwich"?)?
         uint256 art;
         uint256 ink;
         uint256 mat;
@@ -231,12 +237,9 @@ contract MakerVaultAdapter is IDebtPosition, FactoryFriendly {
     // @dev Returns the call data to repay debt on the vault.
     // @param amount The amount of tokens to repay to the vault.
     // @return result array of transactions to be executed to repay debt.
-    function paymentInstructions(uint256 amount)
-        external
-        view
-        override
-        returns (Transaction[] memory)
-    {
+    function paymentInstructions(
+        uint256 amount
+    ) external view override returns (Transaction[] memory) {
         Transaction[] memory result = new Transaction[](2);
         result[0] = Transaction({
             to: asset,
@@ -255,7 +258,7 @@ contract MakerVaultAdapter is IDebtPosition, FactoryFriendly {
                 "execute(address,bytes)",
                 dsProxyActions,
                 abi.encodeWithSignature(
-                    "wipe(address,address,uint256,uint256)",
+                    "wipe(address,address,uint256,uint256)", // @audit - must check
                     cdpManager,
                     daiJoin,
                     vault,

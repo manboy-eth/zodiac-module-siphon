@@ -21,7 +21,7 @@ library BoostedPoolHelper {
         return total;
     }
 
-    // Computing from LinearPoolLeft MainToken (e.g., a stable coint)
+    // Computing from LinearPoolLeft MainToken (e.g., a stable coin)
     // To -> LinearPoolLeft Bpt
     // To -> LinearPoolRight Bpt
     // To -> LinearPoolRight MainToken (e.g., another stable)
@@ -35,14 +35,14 @@ library BoostedPoolHelper {
         address linearPoolRight = findLinearPool(pool, tokenOut);
 
         // amountIn is mainToken of poolIn, i.e., its a stable coin
-        // amoutOut is bpt of poolIn
+        // amountOut  is bpt of poolIn
         uint256 amountOut = LinearPoolHelper.calcBptOutGivenMainIn(
             linearPoolLeft,
             amountIn
         );
 
         // amountIn is bpt of poolIn
-        // amoutOut is bpt of poolOut
+        // amountOut  is bpt of poolOut
         amountIn = amountOut;
         amountOut = StablePhantomPoolHelper.calcTokenOutGivenTokenIn(
             pool,
@@ -52,7 +52,7 @@ library BoostedPoolHelper {
         );
 
         // amountIn is bpt of poolOut
-        // amoutOut is mainToken of poolOut, i.e., its a stable coin
+        // amountOut  is mainToken of poolOut, i.e., its a stable coin
         amountIn = amountOut;
         amountOut = LinearPoolHelper.calcMainOutGivenBptIn(
             linearPoolRight,
@@ -113,11 +113,10 @@ library BoostedPoolHelper {
             );
     }
 
-    function calcMaxStableOut(address pool, address tokenOut)
-        public
-        view
-        returns (uint256)
-    {
+    function calcMaxStableOut(
+        address pool,
+        address tokenOut
+    ) public view returns (uint256) {
         return LinearPoolHelper.calcMaxMainOut(findLinearPool(pool, tokenOut));
     }
 
@@ -126,7 +125,7 @@ library BoostedPoolHelper {
         address stable1,
         address stable2
     ) public view returns (uint256) {
-        uint256 amountIn = 1000 * 10**ERC20(stable1).decimals();
+        uint256 amountIn = 1000 * 10 ** ERC20(stable1).decimals();
         uint256 amountOut = calcStableOutGivenStableIn(
             pool,
             stable1,
@@ -172,11 +171,9 @@ library BoostedPoolHelper {
         return price;
     }
 
-    function findLinearPools(address pool)
-        public
-        view
-        returns (address[] memory)
-    {
+    function findLinearPools(
+        address pool
+    ) public view returns (address[] memory) {
         address vault = IPool(pool).getVault();
         bytes32 poolId = IPool(pool).getPoolId();
         (address[] memory tokens, , ) = IVault(vault).getPoolTokens(poolId);
@@ -191,11 +188,10 @@ library BoostedPoolHelper {
         return result;
     }
 
-    function findLinearPool(address pool, address mainToken)
-        public
-        view
-        returns (address)
-    {
+    function findLinearPool(
+        address pool,
+        address mainToken
+    ) public view returns (address) {
         address[] memory linearPools = findLinearPools(pool);
         for (uint256 i = 0; i < linearPools.length; i++) {
             if (ILinearPool(linearPools[i]).getMainToken() == mainToken) {
@@ -206,11 +202,9 @@ library BoostedPoolHelper {
         revert("findLinearPool: Not found");
     }
 
-    function findStableTokens(address pool)
-        public
-        view
-        returns (address[] memory)
-    {
+    function findStableTokens(
+        address pool
+    ) public view returns (address[] memory) {
         address[] memory result = findLinearPools(pool);
         for (uint256 i = 0; i < result.length; i++) {
             result[i] = ILinearPool(result[i]).getMainToken();

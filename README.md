@@ -18,7 +18,6 @@ This contract should be used in concert with a bot that periodically queries `ra
 
 Siphon also exposes some MEV in the parity and slippage tolerance defined by the user in the liquidity adapter. Setting these variables relatively higher provides an incentive for those seeking to capture MEV to call `siphon()` on the user's behalf whenever `ratio()` falls below `ratioTarget()`. This could be used in concert with the bot mentioned above to add a layer of redundancy to the monitoring payment of unhealthy debt positions.
 
-
 ### Features
 
 - Pay down debt from assets being productively used elsewhere in one atomic transaction.
@@ -51,3 +50,9 @@ All contracts are WITHOUT ANY WARRANTY, without even the implied warranty of MER
 ### License
 
 Created under the [LGPL-3.0+ license](LICENSE).
+
+### TODO:
+
+1. missing events
+2. missing natspac
+3. the balancer specific LP adapter could be contained within `contracts/adapters/lp/balancer/*`. However balancer specific helper and lib functions are present in `contracts/lib` and `contracts/helpers`.

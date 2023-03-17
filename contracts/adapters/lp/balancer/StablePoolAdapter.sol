@@ -39,7 +39,7 @@ contract StablePoolAdapter is AbstractPoolAdapter {
                 tokens[0],
                 tokens[i]
             );
-            uint256 nextDelta = price > FixedPoint.ONE
+            uint256 nextDelta = price > FixedPoint.ONE // @audit - what if the token does not have 18 decimals, like USDT?
                 ? price - FixedPoint.ONE
                 : FixedPoint.ONE - price;
 
@@ -99,15 +99,13 @@ contract StablePoolAdapter is AbstractPoolAdapter {
             });
     }
 
-    function calculateExit(uint256 requestedAmountOut)
+    function calculateExit(
+        uint256 requestedAmountOut
+    )
         internal
         view
         override
-        returns (
-            uint8 kind,
-            uint256 amountIn,
-            uint256 amountOut
-        )
+        returns (uint8 kind, uint256 amountIn, uint256 amountOut)
     {
         (uint256 unstakedBPT, uint256 stakedBPT) = bptBalances();
 

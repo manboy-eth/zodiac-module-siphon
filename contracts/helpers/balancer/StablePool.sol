@@ -12,12 +12,13 @@ library StablePoolHelper {
     using FixedPoint for uint256;
 
     function calcPrice(
+        // @audit - dangerous?
         address pool,
         address token1,
         address token2
     ) public view returns (uint256) {
         // feeler, 1000 USD
-        uint256 amountIn = 1000 * 10**ERC20(token1).decimals();
+        uint256 amountIn = 1000 * 10 ** ERC20(token1).decimals();
         uint256 amountOut = calcTokenOutGivenTokenIn(
             pool,
             token1,
@@ -60,6 +61,7 @@ library StablePoolHelper {
     }
 
     function calcTokenOutGivenTokenIn(
+        // @audit - this is sandwichabel?
         address pool,
         address tokenIn,
         uint256 amountIn,
@@ -70,7 +72,7 @@ library StablePoolHelper {
         uint256 indexIn = Utils.indexOf(tokens.addresses, tokenIn);
         uint256 indexOut = Utils.indexOf(tokens.addresses, tokenOut);
 
-        Utils.upscaleArray(tokens.balances, tokens.scalingFactors);
+        Utils.upscaleArray(tokens.balances, tokens.scalingFactors); // @audit - does this mutate the array "in place"? Yes, array is passed by reference. But we should make this implicit.
 
         amountIn = Utils.upscale(
             Utils.subtractSwapFee(pool, amountIn),
@@ -122,13 +124,11 @@ library StablePoolHelper {
         return amountIn;
     }
 
-    function query(address _pool)
-        private
-        view
-        returns (PoolTokens memory tokens, uint256 amplification)
-    {
+    function query(
+        address _pool
+    ) private view returns (PoolTokens memory tokens, uint256 amplification) {
         IStablePool pool = IStablePool(_pool);
-        (tokens.addresses, tokens.balances, ) = IVault(pool.getVault())
+        (tokens.addresses, tokens.balances, ) = IVault(pool.getVault()) // @audit - This was some cool unpacking (should look into)
             .getPoolTokens(pool.getPoolId());
 
         tokens.scalingFactors = new uint256[](tokens.addresses.length);
@@ -138,7 +138,7 @@ library StablePoolHelper {
             );
         }
 
-        (amplification, , ) = pool.getAmplificationParameter();
+        (amplification, , ) = pool.getAmplificationParameter(); // @audit - what is this?
     }
 
     struct PoolTokens {
