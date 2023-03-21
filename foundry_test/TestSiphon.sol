@@ -65,7 +65,7 @@ contract TestSiphon is Test, SetupMakerVaultAdapter {
         // DP:SET UP - END
 
         // LP: SET UP - START
-        deal(BALANCER_STABLE_POOL, address(avatar), 1_000, true); // makes the avatar a LP in the balancer pool
+        deal(BALANCER_STABLE_POOL, address(avatar), 1_000 ether, true); // makes the avatar a LP in the balancer pool
         stablePoolAdapter = new StablePoolAdapter(
             adapterOwner, // can connect anf disconnect tubes
             address(avatar), // owner of the balancer pool
@@ -73,6 +73,8 @@ contract TestSiphon is Test, SetupMakerVaultAdapter {
             BALANCER_STABLE_POOL_GAUGE,
             DAI
         );
+        stablePoolAdapter.setMinBlockAge(0);
+        stablePoolAdapter.setParityTolerance(10_000);
         // LP: SET UP - END
 
         // create and setup siphon
@@ -81,27 +83,17 @@ contract TestSiphon is Test, SetupMakerVaultAdapter {
     }
 
     function test_connect_tube() public {
+        assert(siphon.avatar() == address(avatar));
+
         siphon.connectTube(
             "testTube1",
             address(makerVaultAdapter),
             address(stablePoolAdapter)
         );
 
-        uint256 delta = makerVaultAdapter.delta();
-        emit log_named_uint("delta", delta);
-        Transaction[] memory txs = makerVaultAdapter.paymentInstructions(delta);
-        emit log_named_uint("txs.length", txs.length);
+        emit log_named_uint("initial delta", makerVaultAdapter.delta());
 
-        // for (uint i = 0; i < txs.length; i++) {
-        //     vm.prank(gnosisDao);
-        //     avatar.execTransactionFromModule(
-        //         payable(txs[i].to),
-        //         txs[i].value,
-        //         txs[i].data,
-        //         uint8(txs[i].operation)
-        //     );
-        // }
-
-        assert(siphon.avatar() == address(avatar));
+        siphon.siphon("testTube1");
+        emit log_named_uint("Delta after Siphon", makerVaultAdapter.delta());
     }
 }
