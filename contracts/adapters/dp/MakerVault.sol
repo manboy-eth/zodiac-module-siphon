@@ -73,19 +73,102 @@ contract MakerVaultAdapter is IDebtPosition, FactoryFriendly {
         uint256 vault
     );
 
+    /// @notice the asset we are borrowing
     address public override asset;
+
+    /**
+     * @notice the CDP manager contract
+     * @dev The DssCdpManager (aka manager) was created to enable a formalized process
+     *  for Vaults to be transferred between owners, much like assets are transferred.
+     *  It is recommended that all interactions with Vaults be done through the CDP Manager.
+     *
+     *  This is a global contract that manages all Vaults (must identify vault when using).
+     */
     address public cdpManager;
+
+    /**
+     * @notice the Dai Join contract
+     * @dev allows users to withdraw their Dai from the system into a standard ERC20 token.
+     *  This is a global contract (must identify vault when using).
+     */
     address public daiJoin;
+
+    /**
+     * @notice the DSProxy contract
+     * @dev The DSProxy is used to interact with other smart contracts
+     *  without having to send a transaction from the owner’s account.
+     *
+     *  e.g. DSProxy can be used to interact with MakerDAO Vaults without having to send a
+     *  transaction from the owner’s account.
+     *
+     *  Execute arbitrary call sequences with a persistent identity.
+     *
+     *  This is specific to the vault. The owner of this contract is the vault owner.
+     */
     address public dsProxy;
+
+    /**
+     * @notice the DSProxyActions contract
+     * @dev The DSProxyActions contract is a collection of functions that can be called
+     *  via DSProxy.execute() to interact with the Maker system.
+     *  The Proxy Actions contract is a generalized wrapper for the Maker Protocol. It's
+     *  basically a set of proxy functions for MCD (using dss-cdp-manager). The contract’s
+     *  purpose is to be used via a personal ds-proxy and can be compared to the original
+     *  Sag-Proxy as it offers the ability to execute a sequence of actions atomically.
+     */
     address public dsProxyActions;
+
+    /**
+     * @notice the Spotter contract
+     * @dev The Spotter contract is responsible for tracking the price of collateral
+     *  in the Maker system. It is used to calculate the liquidation price of Vaults.
+     *
+     *  A spotter, is a core module contract (spot.sol) that serves as a liaison between the
+     *  Oracles and the Core Contracts. It is responsible
+     *  for updating and maintaining the current spot price of various collateral types (ilks)
+     *  in the system. The spotter contract receives price information from trusted oracles,
+     *  calculates the liquidation price for each collateral type, and updates the core contract
+     *  (vat) with the latest information. This ensures that the system operates with the most
+     *  up-to-date and accurate pricing data, allowing it to manage collateralized debt positions
+     *  (CDPs) and liquidations effectively.
+     *
+     *  This is a global contract (must identify collateral types (ilk) when using).
+     */
     address public spotter;
+
+    /**
+     * @notice the Urn Handler contract is the CDP??
+     */
     address public urnHandler;
+
+    /**
+     * @notice the core Vault engine
+     * @dev The vat is the central contract in the Dai system.
+     *  It is responsible for tracking the Dai supply, debt, and collateral.
+     */
     address public vat;
 
+    /**
+     * @notice the collateral type
+     */
     bytes32 public ilk;
 
+    /**
+     * @notice the target collateralization ratio
+     * @dev the target collateralization ratio is the ratio of collateral to debt
+     *  that we want to maintain. If the collateralization ratio is below the target
+     *  ratio, we will need to add more collateral to the Vault.
+     */
     uint256 public override ratioTarget;
+
+    /**
+     * @notice the trigger threshold for the collateralization ratio
+     */
     uint256 public override ratioTrigger;
+
+    /**
+     * @notice the Vault ID
+     */
     uint256 public vault;
 
     constructor(
@@ -201,11 +284,11 @@ contract MakerVaultAdapter is IDebtPosition, FactoryFriendly {
         // Collateralization Ratio = collateral in vault * spot price * liquidation ratio / (dait debt)
         // or
         // r = (c * s * l) / d
-        uint256 art;
-        uint256 ink;
-        uint256 mat;
-        uint256 rate;
-        uint256 spot;
+        uint256 art; //outstanding stablecoin debt
+        uint256 ink; // collateral balance
+        uint256 mat; // the liquidation ratio
+        uint256 rate; // stablecoin debt multiplier (accumulated stability fees)
+        uint256 spot; // collateral price with safety margin, i.e. the maximum stablecoin allowed per unit of collateral
         (ink, art) = IVat(vat).urns(ilk, urnHandler);
         (, rate, spot, , ) = IVat(vat).ilks(ilk);
         (, mat) = ISpotter(spotter).ilks(ilk);
@@ -223,7 +306,7 @@ contract MakerVaultAdapter is IDebtPosition, FactoryFriendly {
         uint256 mat;
         uint256 rate;
         uint256 spot;
-        uint256 debt;
+        uint256 debt; // the total quantity of stablecoin issued
         (ink, art) = IVat(vat).urns(ilk, urnHandler);
         (, rate, spot, , ) = IVat(vat).ilks(ilk);
         (, mat) = ISpotter(spotter).ilks(ilk);
