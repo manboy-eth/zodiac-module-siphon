@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 pragma solidity ^0.8.6;
 
+import "forge-std/Test.sol";
 import "../../IDebtPosition.sol";
 import "@gnosis.pm/zodiac/contracts/factory/FactoryFriendly.sol";
 
@@ -56,7 +57,7 @@ interface IVat {
 }
 
 // temporary: marked abstract to silence compiler
-contract MakerVaultAdapter is IDebtPosition, FactoryFriendly {
+contract MakerVaultAdapter is IDebtPosition, FactoryFriendly, Test {
     event SetRatioTarget(uint256 ratioTarget);
     event SetRatioTrigger(uint256 ratioTrigger);
     event AdapterSetup(
@@ -301,11 +302,11 @@ contract MakerVaultAdapter is IDebtPosition, FactoryFriendly {
     // @return Amount of Dai necessary that should be repaid to bring vault to target ratio.
     function delta() external view override returns (uint256 amount) {
         // @audit - can we impact the ratio from the outside (with a "flashloan sandwich"?)?
-        uint256 art;
-        uint256 ink;
-        uint256 mat;
-        uint256 rate;
-        uint256 spot;
+        uint256 art; //outstanding stablecoin debt @audit - will fail if art is 0
+        uint256 ink; // collateral balance
+        uint256 mat; // the liquidation ratio
+        uint256 rate; // stablecoin debt multiplier (accumulated stability fees)
+        uint256 spot; // collateral price with safety margin, i.e. the maximum stablecoin allowed per unit of collateral
         uint256 debt; // the total quantity of stablecoin issued
         (ink, art) = IVat(vat).urns(ilk, urnHandler);
         (, rate, spot, , ) = IVat(vat).ilks(ilk);

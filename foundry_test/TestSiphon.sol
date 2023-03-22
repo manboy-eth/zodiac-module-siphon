@@ -32,8 +32,8 @@ contract TestSiphon is Test, SetupMakerVaultAdapter {
     uint256 constant vault = 28539;
 
     // DP: ADAPTER SPECIFIC
-    uint256 constant ratioTarget = 4586919454964052515806212538;
-    uint256 constant ratioTrigger = 4211626045012448219058431512;
+    uint256 constant ratioTarget = 200;
+    uint256 constant ratioTrigger = 10;
 
     // LP:
     address constant BALANCER_STABLE_POOL_GAUGE =
@@ -76,6 +76,8 @@ contract TestSiphon is Test, SetupMakerVaultAdapter {
         stablePoolAdapter.setMinBlockAge(0);
         stablePoolAdapter.setParityTolerance(10_000);
         // LP: SET UP - END
+        // 15213468754474595452416750
+        // 1000000000000000000000000
 
         // create and setup siphon
         siphon = new Siphon(address(this), address(avatar), address(this));
